@@ -1,1 +1,550 @@
-<!DOCTYPE html><html lang="vi"><head>    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>Hệ Thống Trắc Nghiệm Pro</title>    <style>        /* === BIẾN MÀU SẮC (THEME) === */        :root {            --primary: #007bff;            --glass-bg: rgba(255, 255, 255, 0.15);            --glass-border: rgba(255, 255, 255, 0.3);            --text-color: #333;            --box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);            --correct-color: #28a745;            --wrong-color: #dc3545;            --btn-hover: rgba(255, 255, 255, 0.3);        }        body.dark-mode {            /* Tối: Gradient Dark Blue */            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);            --text-color: #f1f1f1;            --glass-bg: rgba(0, 0, 0, 0.3);            --glass-border: rgba(255, 255, 255, 0.1);            --box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);            --primary: #4facfe;            --btn-hover: rgba(0, 0, 0, 0.5);        }        body.light-mode {            /* Sáng: Gradient Aqua Yellow */            background: linear-gradient(135deg, #00f2fe 0%, #e0c3fc 50%, #f6ea41 100%);        }        /* === RESET & CƠ BẢN === */        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }        body { min-height: 100vh; overflow-x: hidden; transition: background 0.5s ease; color: var(--text-color); display: flex; align-items: center; justify-content: center; padding: 20px; }        /* === HIỆU ỨNG LƯỚI CARO CHUYỂN ĐỘNG (GRID TWEEN ANIMATION) === */        .grid-bg {            position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;            background-image: linear-gradient(var(--glass-border) 1px, transparent 1px), linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);            background-size: 40px 40px;            animation: gridMove 15s linear infinite;            z-index: -1;            pointer-events: none;        }        @keyframes gridMove {            0% { transform: translateY(0) translateX(0); }            100% { transform: translateY(40px) translateX(40px); }        }        /* === CONTAINER & GLASSMORPHISM === */        .container {            background: var(--glass-bg);            backdrop-filter: blur(12px);            -webkit-backdrop-filter: blur(12px);            border: 1px solid var(--glass-border);            border-radius: 20px;            box-shadow: var(--box-shadow);            width: 100%;            max-width: 800px; /* Normal default */            padding: 30px;            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);            position: relative;        }        /* === MÀN HÌNH (SCREENS) === */        .screen { display: none; animation: fadeIn 0.4s ease forwards; }        .screen.active { display: block; }        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }        /* === START SCREEN === */        h1, h2 { text-align: center; margin-bottom: 20px; font-weight: 700; }        .setting-group { margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; }        select, input[type="checkbox"] { padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text-color); outline: none; }        select option { color: #000; }        /* === BUTTONS === */        button {            background: var(--primary); color: #fff; border: none; padding: 12px 24px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px;        }        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); filter: brightness(1.1); }        .btn-group { display: flex; gap: 10px; margin-top: 20px; }        .btn-group button { width: auto; flex: 1; }        .btn-icon { padding: 8px; border-radius: 50%; width: 40px; height: 40px; background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-color); cursor: pointer; transition: 0.3s; }        .btn-icon:hover { background: var(--btn-hover); }        /* === QUIZ SCREEN === */        .header-quiz { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: bold; font-size: 1.1em; }        .timer { padding: 8px 15px; background: rgba(255, 59, 48, 0.2); border: 1px solid rgba(255, 59, 48, 0.5); border-radius: 20px; color: #ff3b30; }        .dark-mode .timer { color: #ff6b6b; }        /* Progress Bar */        .progress-container { width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; margin-bottom: 20px; overflow: hidden; }        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); }        .question-text { font-size: 1.2em; margin-bottom: 20px; line-height: 1.5; font-weight: 600; }        .options { display: flex; flex-direction: column; gap: 12px; }        .option {             padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 10px;        }        .option:hover { background: var(--btn-hover); transform: translateX(5px); }        .option.selected { background: var(--primary); color: #fff; border-color: var(--primary); }                /* === REVIEW SCREEN === */        .review-list { max-height: 60vh; overflow-y: auto; padding-right: 10px; display: flex; flex-direction: column; gap: 15px; }        .review-list::-webkit-scrollbar { width: 6px; }        .review-list::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }        .review-item { background: rgba(0,0,0,0.05); padding: 15px; border-radius: 10px; border-left: 5px solid transparent; }        .review-item.correct-item { border-left-color: var(--correct-color); }        .review-item.wrong-item { border-left-color: var(--wrong-color); }        .ans-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; margin-top: 5px; font-weight: bold; color: #fff;}        .ans-correct { background: var(--correct-color); }        .ans-wrong { background: var(--wrong-color); }        .ans-sys { background: var(--primary); margin-left: 10px; }        .footer { text-align: center; margin-top: 20px; font-size: 0.85em; opacity: 0.7; }                /* Responsive */        @media (max-width: 600px) {            .container { padding: 20px; }            .btn-group { flex-direction: column; }        }    </style></head><body class="dark-mode">    <div class="grid-bg"></div>    <div class="container" id="mainContainer">        <div style="position: absolute; top: 20px; right: 20px; z-index: 10;">            <button class="btn-icon" id="themeToggle" title="Đổi giao diện">☀️</button>        </div>        <div id="startScreen" class="screen active">            <br>            <h1>HỆ THỐNG TRẮC NGHIỆM</h1>            <p style="text-align: center; margin-bottom: 20px; opacity: 0.8;">Kiểm tra kiến thức - Thời gian: 15 phút</p>                        <div class="setting-group">                <label><strong>Kích thước cửa sổ:</strong></label>                <select id="windowSize">                    <option value="normal">Bình thường (Normal)</option>                    <option value="large">Mở rộng (Large)</option>                    <option value="fullscreen">Toàn màn hình (Full-Screen)</option>                </select>            </div>            <div class="setting-group">                <label><strong>Đảo thứ tự câu hỏi:</strong></label>                <input type="checkbox" id="shuffleCheck" checked>            </div>            <button onclick="startQuiz()" style="padding: 15px; font-size: 1.2em;">🚀 BẮT ĐẦU BÀI LÀM</button>        </div>        <div id="quizScreen" class="screen">            <div class="header-quiz">                <span id="questionCount">Câu 1/24</span>                <span class="timer" id="timerDisplay">⏱️ 15:00</span>            </div>                        <div class="progress-container">                <div class="progress-fill" id="progressBar"></div>            </div>            <div id="questionContainer" class="question-text">Đang tải câu hỏi...</div>            <div id="optionsContainer" class="options"></div>            <div class="btn-group">                <button onclick="prevQuestion()" id="btnPrev" style="background: rgba(128,128,128,0.5);">Quay lại</button>                <button onclick="nextQuestion()" id="btnNext">Tiếp theo</button>            </div>            <button onclick="confirmSubmit()" id="btnSubmit" style="display: none; background: #28a745; margin-top: 15px;">✅ Nộp bài</button>        </div>        <div id="reviewScreen" class="screen">            <h1>KẾT QUẢ BÀI LÀM</h1>            <h2 id="scoreDisplay" style="color: var(--primary); font-size: 2em;">0/24</h2>            <div class="review-list" id="reviewContainer"></div>            <button onclick="location.reload()" style="margin-top: 20px;">🔄 Làm lại từ đầu</button>        </div>        <div class="footer">            Optimized by Dex - 9A1        </div>    </div>    <script>        // DỮ LIỆU CÂU HỎI & ĐÁP ÁN        const rawQuestions = [            { q: "Thiên tai là gì?", opts: ["A. Là hiện tượng tự nhiên bất thường có thể gây thiệt hại về người, tài sản, môi trường và các hoạt động kinh tế - xã hội.", "B. Là hiện tượng do con người gây thiệt hại về người, tài sản, môi trường và các hoạt động kinh tế - xã hội.", "C. Là hiện tượng tự nhiên xảy ra có quy luật gây thiệt hại về người, tài sản, môi trường và các hoạt động kinh tế - xã hội.", "D. Là hiện tượng do con người gây nên chỉ gây thiệt hại về tài sản môi trường."], ans: 0 },            { q: "Trong 22 loại hình thiên tai thường gặp, Thành phố Hồ Chí Minh thường xuất hiện loại hình thiên tai nào sau đây?", opts: ["A. Bão nhiệt đới.", "B. Núi lửa.", "C. Động đất.", "D. Ngập lụt do triều cường."], ans: 3 },            { q: "Cơ quan nào chịu trách nhiệm chính trong công tác phòng, chống thiên tai ở Thành phố Hồ Chí Minh?", opts: ["A. Bộ Văn hóa, Thể thao và Du lịch.", "B. Ủy ban nhân dân Thành phố Hồ Chí Minh.", "C. Các trường học.", "D. Các công ty tư nhân."], ans: 1 },            { q: "Thiên tai nào sau đây là nguyên nhân chính dẫn đến ngập lụt tại Thành phố Hồ Chí Minh khi xảy ra xả lũ từ hồ Dầu Tiếng?", opts: ["A. Triều cường", "B. Mưa lớn kéo dài ở thượng nguồn", "C. Bão nhiệt đới", "D. Sạt lở đất"], ans: 1 },            { q: "Nắng nóng kéo dài trong năm tại Thành phố Hồ Chí Minh có thể gây ra hậu quả nào sau đây?", opts: ["A. Thiếu điện nghiêm trọng.", "B. Tình trạng mất nước, kiệt sức, đột quỵ.", "C. Nước dâng gây ngập lụt", "D. Tăng khả năng sạt lở đất."], ans: 1 },            { q: "Hạn hán và xâm nhập mặn tại Thành phố Hồ Chí Minh có thể gây thiệt hại gì?", opts: ["A. Gây ngập lụt trên diện rộng.", "B. Có thể gây thiếu nước sinh hoạt và sản xuất nông nghiệp.", "C. Không gây thiệt hại nhờ các giải pháp phòng, chống thiên tai kịp thời.", "D. Tạo điều kiện cho cháy rừng phát triển."], ans: 1 },            { q: "Trong giai đoạn trước khi thiên tai xảy ra, việc nào sau đây là một trong những biện pháp quan trọng?", opts: ["A. Lập kế hoạch phòng, chống thiên tai tại địa phương và cấp cơ sở.", "B. Di chuyển tất cả người dân ra khỏi thành phố.", "C. Xây dựng các công trình nhà cao tầng tránh thiên tai.", "D. Lập các quỹ dự phòng thiên tai quốc gia."], ans: 0 },            { q: "Khi có thông tin về bão, chúng ta không nên dự trữ các loại lương thực, thực phẩm nào?", opts: ["A. Có hạn sử dụng dài.", "B. Các loại đồ khô: mì tôm, bánh, lương khô, ...", "C. Các thực phẩm tươi sống: thịt, tôm, cua, cá, ...", "D. Các loại đồ hộp, sữa cho trẻ em, ..."], ans: 2 },            { q: "Sau khi thiên tai xảy ra, việc quan trọng nhất cần làm là:", opts: ["A. Cấm tất cả hoạt động giao thông trong khu vực.", "B. Khôi phục hoạt động sản xuất ngay lập tức.", "C. Khắc phục hậu quả và dọn dẹp vệ sinh môi trường.", "D. Xây dựng lại các công trình từ đầu."], ans: 2 },            { q: "Để bảo vệ môi trường, Thành phố Hồ Chí Minh đang đẩy mạnh sử dụng các loại phương tiện nào sau đây?", opts: ["A. Xe máy điện, xe cá nhân sử dụng nhiên liệu hóa thạch", "B. Xe buýt sạch, xe điện, xe đạp.", "C. Ôtô sử dụng nhiên liệu hóa thạch.", "D. Xe buýt truyền thống."], ans: 1 },            { q: "Phân luồng học sinh sau THCS có mục đích chính là gì?", opts: ["A. Giúp học sinh chọn nghề theo sở thích cá nhân.", "B. Hướng dẫn học sinh tiếp tục học THPT.", "C. Định hướng học sinh vào các chương trình giáo dục hoặc thị trường lao động.", "D. Giúp học sinh nghỉ học sớm để làm việc."], ans: 0 },            { q: "Học sinh tốt nghiệp THCS có thể theo học ở đâu?", opts: ["A. Chỉ có thể học THPT.", "B. Học THPT, trung cấp nghề hoặc học nghề sơ cấp.", "C. Chỉ có thể học tại các trung tâm giáo dục nghề nghiệp.", "D. Học đại học ngay sau THCS"], ans: 1 },            { q: "Thành phố Hồ Chí Minh có định hướng gì trong phát triển giáo dục?", opts: ["A. Chỉ tập trung vào đại học.", "B. Không cần đầu tư vào giáo dục phổ thông.", "C. Đặt mục tiêu đạt trình độ tiên tiến khu vực và thế giới.", "D. Không có định hướng rõ ràng."], ans: 2 },            { q: "Khi lựa chọn nghề nghiệp, yếu tố nào dưới đây là quan trọng nhất?", opts: ["A. Thu nhập cao.", "B. Sở thích, năng lực cá nhân và nhu cầu xã hội.", "C. Nghề đang có nhiều người theo học.", "D. Nghề có thời gian đào tạo ngắn."], ans: 1 },            { q: "Giáo dục nghề nghiệp ở Thành phố Hồ Chí Minh có điểm gì nổi bật?", opts: ["A. Chỉ đào tạo lý thuyết.", "B. Liên kết chặt chẽ với doanh nghiệp.", "C. Không có sự đổi mới.", "D. Không chú trọng đến thực hành."], ans: 1 },            { q: "Trường hợp nào sau đây cho thấy việc chọn nghề sai lầm?", opts: ["A. Một bạn đam mê vẽ chọn nghề thiết kế đồ họa.", "B. Một bạn yêu thích công nghệ chọn nghề lập trình viên.", "C. Một bạn thích giao tiếp nhưng chọn làm kỹ sư phần mềm mà không tìm hiểu kỹ.", "D. Một bạn giỏi toán chọn ngành tài chính."], ans: 2 },            { q: "Vì sao việc định hướng nghề nghiệp sớm là cần thiết?", opts: ["A. Giúp học sinh không phải học THPT.", "B. Giúp học sinh có thu nhập cao ngay sau khi tốt nghiệp.", "C. Giúp học sinh xác định con đường học tập và nghề nghiệp phù hợp.", "D. Giúp học sinh làm theo mong muốn của cha mẹ."], ans: 2 },            { q: "Một học sinh yêu thích sáng tạo, vẽ tranh và làm video nhưng không giỏi các môn tự nhiên. Ngành nghề nào sau đây phù hợp với bạn ấy?", opts: ["A. Bác sĩ.", "B. Kỹ sư phần mềm.", "C. Nhà thiết kế đồ họa.", "D. Kỹ sư điện tử."], ans: 2 },            { q: "Khi lựa chọn nghề nghiệp, điều nào sau đây là không đúng?", opts: ["A. Cần tìm hiểu kỹ về yêu cầu công việc của nghề mình chọn.", "B. Chọn nghề theo xu hướng mà không quan tâm đến bản thân.", "C. Cần xem xét sở thích, năng lực và điều kiện của bản thân.", "D. Chọn nghề dựa trên nhu cầu của xã hội."], ans: 1 },            { q: "Nếu một học sinh yêu thích công nghệ nhưng chưa có nhiều kiến thức về máy tính, em sẽ tư vấn thế nào?", opts: ["A. Từ bỏ ước mơ vì không đủ năng lực.", "B. Học bổ sung kiến thức và tìm hiểu về các ngành công nghệ phù hợp.", "C. Chọn một ngành không liên quan đến công nghệ.", "D. Chỉ dựa vào sở thích mà không quan tâm đến năng lực."], ans: 1 },            { q: "Nghề nào dưới đây không thuộc nhóm ngành Công nghệ thông tin?", opts: ["A. Lập trình viên.", "B. Chuyên viên an ninh mạng.", "C. Kỹ sư cơ khí.", "D. Quản trị hệ thống mạng."], ans: 2 },            { q: "Việc lựa chọn nghề nghiệp không nên dựa vào yếu tố nào?", opts: ["A. Sở thích cá nhân", "B. Nhu cầu lao động của xã hội", "C. Lời khuyên từ người thân", "D. Nghề nghiệp của bạn bè, nghề đang \"hot\""], ans: 3 },            { q: "Vì sao cần định hướng phân luồng học sinh sau THCS?", opts: ["A. Để giảm sĩ số lớp", "B. Giúp học sinh chọn hướng đi phù hợp với năng lực và hoàn cảnh", "C. Để tăng số lượng học sinh học nghề", "D. Để giảm chi phí cho nhà nước"], ans: 1 },            { q: "Vì sao việc lựa chọn nghề nghiệp phù hợp lại quan trọng?", opts: ["A. Giúp phát huy năng lực, yêu thích công việc.", "B. Giúp có thu nhập cao ngay sau khi tốt nghiệp.", "C. Giúp có công việc ổn định ngay lập tức.", "D. Để không bị ảnh hưởng bởi gia đình."], ans: 0 }        ];        let questions = [];        let userAnswers = [];        let currentIndex = 0;        let timerInterval;        let timeLeft = 15 * 60; // 15 phút        // THEME TOGGLE        const themeToggle = document.getElementById('themeToggle');        themeToggle.addEventListener('click', () => {            document.body.classList.toggle('dark-mode');            document.body.classList.toggle('light-mode');            themeToggle.innerText = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';        });        function shuffleArray(array) {            let curId = array.length;            while (0 !== curId) {                let randId = Math.floor(Math.random() * curId);                curId -= 1;                let tmp = array[curId];                array[curId] = array[randId];                array[randId] = tmp;            }            return array;        }        function switchScreen(screenId) {            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));            document.getElementById(screenId).classList.add('active');        }        function applyWindowSize() {            const size = document.getElementById('windowSize').value;            const container = document.getElementById('mainContainer');            if (size === 'normal') { container.style.maxWidth = '800px'; }            else if (size === 'large') { container.style.maxWidth = '1200px'; }            else if (size === 'fullscreen') {                container.style.maxWidth = '95%';                if (document.documentElement.requestFullscreen) {                    document.documentElement.requestFullscreen().catch(err => console.log(err));                }            }        }        function startTimer() {            timerInterval = setInterval(() => {                timeLeft--;                let m = Math.floor(timeLeft / 60);                let s = timeLeft % 60;                document.getElementById('timerDisplay').innerText = `⏱️ ${m}:${s < 10 ? '0'+s : s}`;                if (timeLeft <= 0) {                    clearInterval(timerInterval);                    alert("Đã hết thời gian làm bài!");                    submitQuiz();                }            }, 1000);        }        function startQuiz() {            applyWindowSize();                        // Deep copy để không làm hỏng mảng gốc            questions = JSON.parse(JSON.stringify(rawQuestions));                        if (document.getElementById('shuffleCheck').checked) {                questions = shuffleArray(questions);            }                        userAnswers = new Array(questions.length).fill(null);            currentIndex = 0;            timeLeft = 15 * 60;                        renderQuestion();            switchScreen('quizScreen');            startTimer();        }        function renderQuestion() {            const q = questions[currentIndex];            document.getElementById('questionCount').innerText = `Câu ${currentIndex + 1}/${questions.length}`;                        // Cập nhật thanh tiến trình mượt mà (chỉ tăng khi tới câu mới)            const progressPercent = ((currentIndex) / questions.length) * 100;            document.getElementById('progressBar').style.width = `${progressPercent}%`;            document.getElementById('questionContainer').innerText = q.q;            const optsContainer = document.getElementById('optionsContainer');            optsContainer.innerHTML = '';            q.opts.forEach((opt, idx) => {                const div = document.createElement('div');                div.className = `option ${userAnswers[currentIndex] === idx ? 'selected' : ''}`;                div.innerHTML = `<span>${opt}</span>`;                div.onclick = () => selectOption(idx);                optsContainer.appendChild(div);            });            document.getElementById('btnPrev').style.visibility = currentIndex === 0 ? 'hidden' : 'visible';                        if (currentIndex === questions.length - 1) {                document.getElementById('btnNext').style.display = 'none';                document.getElementById('btnSubmit').style.display = 'inline-flex';            } else {                document.getElementById('btnNext').style.display = 'inline-flex';                document.getElementById('btnSubmit').style.display = 'none';            }        }        function selectOption(idx) {            userAnswers[currentIndex] = idx;            renderQuestion(); // Re-render để cập nhật class selected        }        function nextQuestion() {            if (currentIndex < questions.length - 1) {                currentIndex++;                renderQuestion();            }        }        function prevQuestion() {            if (currentIndex > 0) {                currentIndex--;                renderQuestion();            }        }        function confirmSubmit() {            const unans = userAnswers.filter(a => a === null).length;            if (unans > 0) {                if(!confirm(`Bạn còn ${unans} câu chưa làm. Bạn có chắc chắn muốn nộp bài?`)) return;            }            submitQuiz();        }        function submitQuiz() {            clearInterval(timerInterval);            if (document.fullscreenElement) {                document.exitFullscreen().catch(err => console.log(err));            }                        let score = 0;            const reviewContainer = document.getElementById('reviewContainer');            reviewContainer.innerHTML = '';            questions.forEach((q, i) => {                const isCorrect = userAnswers[i] === q.ans;                if (isCorrect) score++;                const uAns = userAnswers[i] !== null ? q.opts[userAnswers[i]].substring(0,2) : "Chưa chọn";                const cAns = q.opts[q.ans].substring(0,2); // Lấy A., B., C., D.                const item = document.createElement('div');                item.className = `review-item ${isCorrect ? 'correct-item' : 'wrong-item'}`;                                item.innerHTML = `                    <p><strong>Câu ${i + 1}:</strong> ${q.q}</p>                    <div>                        <span class="ans-badge ${isCorrect ? 'ans-correct' : 'ans-wrong'}">Bạn chọn: ${uAns}</span>                        ${!isCorrect ? `<span class="ans-badge ans-sys">Đáp án đúng: ${cAns}</span>` : ''}                    </div>                `;                reviewContainer.appendChild(item);            });            document.getElementById('scoreDisplay').innerText = `${score} / ${questions.length}`;            document.getElementById('progressBar').style.width = `100%`; // Hoàn thành            switchScreen('reviewScreen');        }    </script></body></html>
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Trắc Nghiệm - Ultra Pro</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+        /* Theme Variables */
+        :root {
+            /* Dark Theme (Default) - Gradient Dark Blue */
+            --bg-gradient: linear-gradient(135deg, #091221 0%, #162238 50%, #0d1b2a 100%);
+            --grid-color: rgba(255, 255, 255, 0.05);
+            --glass-bg: rgba(20, 30, 48, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            --text-main: #ffffff;
+            --text-muted: #a0aec0;
+            --accent-color: #3b82f6;
+            --accent-glow: 0 0 20px rgba(59, 130, 246, 0.5);
+            --btn-hover: rgba(59, 130, 246, 0.2);
+            --correct-color: #10b981;
+            --wrong-color: #ef4444;
+        }
+
+        [data-theme="light"] {
+            /* Light Theme - Gradient Aqua Yellow */
+            --bg-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #f6d365 100%);
+            --grid-color: rgba(255, 255, 255, 0.4);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --text-main: #1e293b;
+            --text-muted: #475569;
+            --accent-color: #0284c7;
+            --accent-glow: 0 0 20px rgba(2, 132, 199, 0.4);
+            --btn-hover: rgba(2, 132, 199, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            background-attachment: fixed;
+        }
+
+        /* Animated 2D Grid Background */
+        .grid-bg {
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridMove 15s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(40px, 40px); }
+        }
+
+        /* Glassmorphism Container */
+        .app-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            padding: 2rem;
+            width: 90%;
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Window Sizes */
+        .size-normal { max-width: 800px; }
+        .size-large { max-width: 1200px; }
+        .size-full { width: 100%; height: 100vh; border-radius: 0; display: flex; flex-direction: column; justify-content: center;}
+
+        /* Header & Top Controls */
+        .top-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Screens */
+        .screen { display: none; animation: fadeIn 0.5s ease forwards; }
+        .screen.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Start Screen */
+        .start-screen { text-align: center; }
+        .start-screen h1 { font-size: 2.5rem; margin-bottom: 1rem; text-shadow: var(--accent-glow); }
+        .settings-group { margin: 2rem 0; display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+        .size-selector { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;}
+        
+        button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover { background: var(--btn-hover); box-shadow: var(--accent-glow); transform: translateY(-2px); }
+        button.active-btn { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+        
+        .btn-start {
+            background: var(--accent-color);
+            color: #fff;
+            font-size: 1.2rem;
+            padding: 15px 40px;
+            font-weight: bold;
+            box-shadow: var(--accent-glow);
+            margin-top: 1rem;
+        }
+
+        /* Quiz Screen */
+        .header-info { display: flex; justify-content: space-between; margin-bottom: 2rem; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;}
+        .timer { font-size: 1.5rem; font-weight: bold; color: var(--accent-color); text-shadow: var(--accent-glow); }
+        
+        .progress-container { width: 100%; height: 8px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 2rem; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--accent-color); width: 0%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--accent-glow); }
+
+        .question-text { font-size: 1.4rem; font-weight: 600; margin-bottom: 1.5rem; line-height: 1.5; }
+        
+        .options-grid { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+        .option-btn {
+            text-align: left;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            line-height: 1.4;
+            display: flex;
+            align-items: center;
+        }
+        .option-btn.selected { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+        
+        /* Review Colors */
+        .option-btn.correct { background: var(--correct-color) !important; border-color: var(--correct-color) !important; color: #fff !important; }
+        .option-btn.wrong { background: var(--wrong-color) !important; border-color: var(--wrong-color) !important; color: #fff !important; }
+
+        .controls { display: flex; justify-content: space-between; }
+        
+        /* Toast Popup */
+        .toast-container {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 100; display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+        }
+        .toast {
+            background: var(--glass-bg); backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border); border-radius: 12px;
+            padding: 15px 20px; min-width: 300px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: var(--glass-shadow); pointer-events: auto;
+            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .toast.success { border-left: 4px solid var(--correct-color); }
+        .toast.error { border-left: 4px solid var(--wrong-color); }
+        .toast-content { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        .toast-icon { font-size: 1.2rem; }
+        .toast-close { background: transparent; border: none; padding: 0; font-size: 1.5rem; line-height: 1; margin-left: 15px; box-shadow: none; }
+        .toast-close:hover { background: transparent; color: var(--wrong-color); transform: scale(1.1); }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(20px); }
+        }
+
+        /* Result Screen */
+        .result-screen { text-align: center; }
+        .score-circle {
+            width: 150px; height: 150px; border-radius: 50%;
+            background: conic-gradient(var(--accent-color) 0%, transparent 0%);
+            display: flex; justify-content: center; align-items: center;
+            margin: 0 auto 2rem; font-size: 2rem; font-weight: bold;
+            position: relative; border: 4px solid var(--glass-border);
+        }
+        .score-circle::before {
+            content: ''; position: absolute; width: 130px; height: 130px;
+            background: var(--glass-bg); border-radius: 50%; backdrop-filter: blur(10px);
+        }
+        .score-text { position: relative; z-index: 1; text-shadow: var(--accent-glow); }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .app-container { width: 95%; padding: 1.5rem; }
+            .question-text { font-size: 1.2rem; }
+            .size-selector { flex-direction: column; }
+            .controls { flex-direction: column; gap: 10px; }
+            .controls button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+
+    <div class="top-controls">
+        <button class="theme-toggle" onclick="toggleTheme()">Sáng / Tối</button>
+    </div>
+
+    <div class="app-container size-normal" id="app">
+        
+        <div class="screen active start-screen" id="start-screen">
+            <h1>Hệ Thống Trắc Nghiệm</h1>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Giáo dục địa phương 9 HK2 - Thời gian: 15 Phút</p>
+            
+            <div class="settings-group">
+                <h3>Kích thước cửa sổ</h3>
+                <div class="size-selector">
+                    <button class="active-btn" onclick="setSize('normal', this)">Bình thường</button>
+                    <button onclick="setSize('large', this)">Lớn</button>
+                    <button onclick="setSize('full', this)">Toàn màn hình</button>
+                </div>
+            </div>
+
+            <button class="btn-start" onclick="startSystem()">BẮT ĐẦU BÀI LÀM</button>
+        </div>
+
+        <div class="screen" id="quiz-screen">
+            <div class="header-info">
+                <div>Câu hỏi: <span id="q-counter">1/24</span></div>
+                <div class="timer" id="timer">15:00</div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div id="question-container">
+                <div class="question-text" id="question-text">Loading...</div>
+                <div class="options-grid" id="options-grid"></div>
+            </div>
+
+            <div class="controls">
+                <button onclick="prevQuestion()" id="btn-prev" style="display: none;">Quay lại</button>
+                <button onclick="nextQuestion()" id="btn-next" style="margin-left: auto;">Tiếp theo</button>
+                <button onclick="submitQuiz()" id="btn-submit" class="btn-start" style="display: none; margin-left: auto; margin-top: 0;">NỘP BÀI</button>
+            </div>
+        </div>
+
+        <div class="screen result-screen" id="result-screen">
+            <h1>Kết Quả Bài Làm</h1>
+            <div class="score-circle" id="score-circle">
+                <span class="score-text" id="score-text">0/24</span>
+            </div>
+            <p style="font-size: 1.2rem; margin-bottom: 2rem;" id="result-msg"></p>
+            <div class="size-selector">
+                <button onclick="reviewSystem()" class="btn-start">XEM LẠI ĐÁP ÁN</button>
+                <button onclick="location.reload()">LÀM LẠI</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // Dữ liệu câu hỏi chuẩn theo Prompt
+        const rawQuestions = [
+            { q: "Câu 1: Thiên tai là gì?", opts: ["A. Là hiện tượng tự nhiên bất thường có thể gây thiệt hại về người, tài sản, môi trường và các hoạt động kinh tế - xã hội.", "B. Là hiện tượng do con người gây thiệt hại về người, tài sản, môi trường và các hoạt động kinh tế - xã hội.", "C. Là hiện tượng tự nhiên xảy ra có quy luật gây thiệt hại về người, tài sản, môi trường và các hoạt động kinh tế - xã hội.", "D. Là hiện tượng do con người gây nên chỉ gây thiệt hại về tài sản môi trường."], ans: 0 },
+            { q: "Câu 2: Trong 22 loại hình thiên tai thường gặp, Thành phố Hồ Chí Minh thường xuất hiện loại hình thiên tai nào sau đây?", opts: ["A. Bão nhiệt đới.", "B. Núi lửa.", "C. Động đất.", "D. Ngập lụt do triều cường."], ans: 3 },
+            { q: "Câu 3: Cơ quan nào chịu trách nhiệm chính trong công tác phòng, chống thiên tai ở Thành phố Hồ Chí Minh?", opts: ["A. Bộ Văn hóa, Thể thao và Du lịch.", "B. Ủy ban nhân dân Thành phố Hồ Chí Minh.", "C. Các trường học.", "D. Các công ty tư nhân."], ans: 1 },
+            { q: "Câu 4: Thiên tai nào sau đây là nguyên nhân chính dẫn đến ngập lụt tại Thành phố Hồ Chí Minh khi xảy ra xả lũ từ hồ Dầu Tiếng?", opts: ["A. Triều cường", "B. Mưa lớn kéo dài ở thượng nguồn", "C. Bão nhiệt đới", "D. Sạt lở đất"], ans: 1 },
+            { q: "Câu 5: Nắng nóng kéo dài trong năm tại Thành phố Hồ Chí Minh có thể gây ra hậu quả nào sau đây?", opts: ["A. Thiếu điện nghiêm trọng.", "B. Tình trạng mất nước, kiệt sức, đột quỵ.", "C. Nước dâng gây ngập lụt", "D. Tăng khả năng sạt lở đất."], ans: 1 },
+            { q: "Câu 6: Hạn hán và xâm nhập mặn tại Thành phố Hồ Chí Minh có thể gây thiệt hại gì?", opts: ["A. Gây ngập lụt trên diện rộng.", "B. Có thể gây thiếu nước sinh hoạt và sản xuất nông nghiệp.", "C. Không gây thiệt hại nhờ các giải pháp phòng, chống thiên tai kịp thời.", "D. Tạo điều kiện cho cháy rừng phát triển."], ans: 1 },
+            { q: "Câu 7: Trong giai đoạn trước khi thiên tai xảy ra, việc nào sau đây là một trong những biện pháp quan trọng?", opts: ["A. Lập kế hoạch phòng, chống thiên tai tại địa phương và cấp cơ sở.", "B. Di chuyển tất cả người dân ra khỏi thành phố.", "C. Xây dựng các công trình nhà cao tầng tránh thiên tai.", "D. Lập các quỹ dự phòng thiên tai quốc gia."], ans: 0 },
+            { q: "Câu 8: Khi có thông tin về bão, chúng ta không nên dự trữ các loại lương thực, thực phẩm nào?", opts: ["A. Có hạn sử dụng dài.", "B. Các loại đồ khô: mì tôm, bánh, lương khô, ...", "C. Các thực phẩm tươi sống: thịt, tôm, cua, cá, ...", "D. Các loại đồ hộp, sữa cho trẻ em, ..."], ans: 2 },
+            { q: "Câu 9: Sau khi thiên tai xảy ra, việc quan trọng nhất cần làm là:", opts: ["A. Cấm tất cả hoạt động giao thông trong khu vực.", "B. Khôi phục hoạt động sản xuất ngay lập tức.", "C. Khắc phục hậu quả và dọn dẹp vệ sinh môi trường.", "D. Xây dựng lại các công trình từ đầu."], ans: 2 },
+            { q: "Câu 10: Để bảo vệ môi trường, Thành phố Hồ Chí Minh đang đẩy mạnh sử dụng các loại phương tiện nào sau đây?", opts: ["A. Xe máy điện, xe cá nhân sử dụng nhiên liệu hóa thạch", "B. Xe buýt sạch, xe điện, xe đạp.", "C. Ôtô sử dụng nhiên liệu hóa thạch.", "D. Xe buýt truyền thống."], ans: 1 },
+            { q: "Câu 11: Phân luồng học sinh sau THCS có mục đích chính là gì?", opts: ["A. Giúp học sinh chọn nghề theo sở thích cá nhân.", "B. Hướng dẫn học sinh tiếp tục học THPT.", "C. Định hướng học sinh vào các chương trình giáo dục hoặc thị trường lao động.", "D. Giúp học sinh nghỉ học sớm để làm việc."], ans: 0 },
+            { q: "Câu 12: Học sinh tốt nghiệp THCS có thể theo học ở đâu?", opts: ["A. Chỉ có thể học THPT.", "B. Học THPT, trung cấp nghề hoặc học nghề sơ cấp.", "C. Chỉ có thể học tại các trung tâm giáo dục nghề nghiệp.", "D. Học đại học ngay sau THCS"], ans: 1 },
+            { q: "Câu 13: Thành phố Hồ Chí Minh có định hướng gì trong phát triển giáo dục?", opts: ["A. Chỉ tập trung vào đại học.", "B. Không cần đầu tư vào giáo dục phổ thông.", "C. Đặt mục tiêu đạt trình độ tiên tiến khu vực và thế giới.", "D. Không có định hướng rõ ràng."], ans: 2 },
+            { q: "Câu 14: Khi lựa chọn nghề nghiệp, yếu tố nào dưới đây là quan trọng nhất?", opts: ["A. Thu nhập cao.", "B. Sở thích, năng lực cá nhân và nhu cầu xã hội.", "C. Nghề đang có nhiều người theo học.", "D. Nghề có thời gian đào tạo ngắn."], ans: 1 },
+            { q: "Câu 15: Giáo dục nghề nghiệp ở Thành phố Hồ Chí Minh có điểm gì nổi bật?", opts: ["A. Chỉ đào tạo lý thuyết.", "B. Liên kết chặt chẽ với doanh nghiệp.", "C. Không có sự đổi mới.", "D. Không chú trọng đến thực hành."], ans: 1 },
+            { q: "Câu 16: Trường hợp nào sau đây cho thấy việc chọn nghề sai lầm?", opts: ["A. Một bạn đam mê vẽ chọn nghề thiết kế đồ họa.", "B. Một bạn yêu thích công nghệ chọn nghề lập trình viên.", "C. Một bạn thích giao tiếp nhưng chọn làm kỹ sư phần mềm mà không tìm hiểu kỹ.", "D. Một bạn giỏi toán chọn ngành tài chính."], ans: 2 },
+            { q: "Câu 17: Vì sao việc định hướng nghề nghiệp sớm là cần thiết?", opts: ["A. Giúp học sinh không phải học THPT.", "B. Giúp học sinh có thu nhập cao ngay sau khi tốt nghiệp.", "C. Giúp học sinh xác định con đường học tập và nghề nghiệp phù hợp.", "D. Giúp học sinh làm theo mong muốn của cha mẹ."], ans: 2 },
+            { q: "Câu 18: Một học sinh yêu thích sáng tạo, vẽ tranh và làm video nhưng không giỏi các môn tự nhiên. Ngành nghề nào sau đây phù hợp với bạn ấy?", opts: ["A. Bác sĩ.", "B. Kỹ sư phần mềm.", "C. Nhà thiết kế đồ họa.", "D. Kỹ sư điện tử."], ans: 2 },
+            { q: "Câu 19: Khi lựa chọn nghề nghiệp, điều nào sau đây là không đúng?", opts: ["A. Cần tìm hiểu kỹ về yêu cầu công việc của nghề mình chọn.", "B. Chọn nghề theo xu hướng mà không quan tâm đến bản thân.", "C. Cần xem xét sở thích, năng lực và điều kiện của bản thân.", "D. Chọn nghề dựa trên nhu cầu của xã hội."], ans: 1 },
+            { q: "Câu 20: Nếu một học sinh yêu thích công nghệ nhưng chưa có nhiều kiến thức về máy tính, em sẽ tư vấn thế nào?", opts: ["A. Từ bỏ ước mơ vì không đủ năng lực.", "B. Học bổ sung kiến thức và tìm hiểu về các ngành công nghệ phù hợp.", "C. Chọn một ngành không liên quan đến công nghệ.", "D. Chỉ dựa vào sở thích mà không quan tâm đến năng lực."], ans: 1 },
+            { q: "Câu 21: Nghề nào dưới đây không thuộc nhóm ngành Công nghệ thông tin?", opts: ["A. Lập trình viên.", "B. Chuyên viên an ninh mạng.", "C. Kỹ sư cơ khí.", "D. Quản trị hệ thống mạng."], ans: 2 },
+            { q: "Câu 22: Việc lựa chọn nghề nghiệp không nên dựa vào yếu tố nào?", opts: ["A. Sở thích cá nhân", "B. Nhu cầu lao động của xã hội", "C. Lời khuyên từ người thân", "D. Nghề nghiệp của bạn bè, nghề đang \"hot\""], ans: 3 },
+            { q: "Câu 23: Vì sao cần định hướng phân luồng học sinh sau THCS?", opts: ["A. Để giảm sĩ số lớp", "B. Giúp học sinh chọn hướng đi phù hợp với năng lực và hoàn cảnh", "C. Để tăng số lượng học sinh học nghề", "D. Để giảm chi phí cho nhà nước"], ans: 1 },
+            { q: "Câu 24: Vì sao việc lựa chọn nghề nghiệp phù hợp lại quan trọng?", opts: ["A. Giúp phát huy năng lực, yêu thích công việc.", "B. Giúp có thu nhập cao ngay sau khi tốt nghiệp.", "C. Giúp có công việc ổn định ngay lập tức.", "D. Để không bị ảnh hưởng bởi gia đình."], ans: 0 }
+        ];
+
+        let questions = [];
+        let currentIdx = 0;
+        let userAnswers = new Array(24).fill(null);
+        let maxReachedIdx = 0; // Để điều khiển progress bar
+        let timeLeft = 15 * 60; // 15 phút
+        let timerInterval;
+        let isReviewMode = false;
+
+        // Shuffle Array logic
+        function shuffleArray(array) {
+            let curId = array.length;
+            while (0 !== curId) {
+                let randId = Math.floor(Math.random() * curId);
+                curId -= 1;
+                let tmp = array[curId];
+                array[curId] = array[randId];
+                array[randId] = tmp;
+            }
+            return array;
+        }
+
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            html.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+        }
+
+        // Window Size Selector
+        function setSize(size, btn) {
+            const app = document.getElementById('app');
+            app.className = 'app-container size-' + size;
+            
+            document.querySelectorAll('.size-selector button').forEach(b => b.classList.remove('active-btn'));
+            btn.classList.add('active-btn');
+
+            if (size === 'full') {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(err => console.log(err));
+                }
+            } else {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen().catch(err => console.log(err));
+                }
+            }
+        }
+
+        // Start System
+        function startSystem() {
+            // Đảo câu hỏi trước khi bắt đầu
+            questions = shuffleArray([...rawQuestions]);
+            userAnswers = new Array(questions.length).fill(null);
+            
+            document.getElementById('start-screen').classList.remove('active');
+            document.getElementById('quiz-screen').classList.add('active');
+            
+            startTimer();
+            loadQuestion();
+        }
+
+        // Timer Logic
+        function startTimer() {
+            const timerEl = document.getElementById('timer');
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitQuiz();
+                } else {
+                    timeLeft--;
+                    let m = Math.floor(timeLeft / 60);
+                    let s = timeLeft % 60;
+                    timerEl.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+                }
+            }, 1000);
+        }
+
+        // Load Question UI
+        function loadQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('question-text').innerText = `Câu ${currentIdx + 1}: ${q.q.replace(/^Câu \d+: /, '')}`; // Xóa chữ "Câu X: " cũ do đã đảo
+            document.getElementById('q-counter').innerText = `${currentIdx + 1} / ${questions.length}`;
+            
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = '';
+            
+            q.opts.forEach((optText, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = optText;
+                
+                if (!isReviewMode) {
+                    // Chế độ làm bài
+                    btn.onclick = () => selectOption(index);
+                    if (userAnswers[currentIdx] === index) btn.classList.add('selected');
+                } else {
+                    // Chế độ Review
+                    btn.disabled = true;
+                    btn.style.cursor = 'default';
+                    
+                    if (index === q.ans) {
+                        btn.classList.add('correct'); // Đáp án đúng hệ thống
+                    } else if (userAnswers[currentIdx] === index && index !== q.ans) {
+                        btn.classList.add('wrong'); // Đáp án người dùng sai
+                    }
+                }
+                optionsGrid.appendChild(btn);
+            });
+
+            // Button controls visibility
+            document.getElementById('btn-prev').style.display = currentIdx > 0 ? 'block' : 'none';
+            
+            if (currentIdx === questions.length - 1) {
+                document.getElementById('btn-next').style.display = 'none';
+                if (!isReviewMode) document.getElementById('btn-submit').style.display = 'block';
+            } else {
+                document.getElementById('btn-next').style.display = 'block';
+                document.getElementById('btn-submit').style.display = 'none';
+            }
+
+            // Progress Bar (Chỉ tăng khi qua câu mới)
+            if (!isReviewMode) {
+                if (currentIdx > maxReachedIdx) maxReachedIdx = currentIdx;
+                let progressPercent = ((maxReachedIdx) / (questions.length - 1)) * 100;
+                document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+            } else {
+                // Review mode progress bar map 100%
+                document.getElementById('progress-bar').style.width = `${(currentIdx / (questions.length - 1)) * 100}%`;
+                showReviewToast();
+            }
+        }
+
+        function selectOption(idx) {
+            userAnswers[currentIdx] = idx;
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => btn.classList.remove('selected'));
+            buttons[idx].classList.add('selected');
+        }
+
+        function nextQuestion() {
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                loadQuestion();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIdx > 0) {
+                currentIdx--;
+                loadQuestion();
+            }
+        }
+
+        // Submit Logic
+        function submitQuiz() {
+            clearInterval(timerInterval);
+            let score = 0;
+            questions.forEach((q, i) => {
+                if (userAnswers[i] === q.ans) score++;
+            });
+
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('result-screen').classList.add('active');
+            
+            document.getElementById('score-text').innerText = `${score} / ${questions.length}`;
+            let ratio = score / questions.length;
+            document.getElementById('score-circle').style.background = `conic-gradient(var(--accent-color) ${ratio * 360}deg, transparent 0%)`;
+            
+            let msg = ratio >= 0.8 ? "Tuyệt vời! Bạn nắm vững kiến thức rất tốt." : 
+                      ratio >= 0.5 ? "Khá tốt! Cần ôn tập thêm một chút." : "Cố gắng hơn ở lần sau nhé!";
+            document.getElementById('result-msg').innerText = msg;
+        }
+
+        // Review System Logic
+        function reviewSystem() {
+            isReviewMode = true;
+            currentIdx = 0;
+            document.getElementById('result-screen').classList.remove('active');
+            document.getElementById('quiz-screen').classList.add('active');
+            document.getElementById('timer').style.display = 'none';
+            document.getElementById('btn-submit').style.display = 'none';
+            loadQuestion();
+        }
+
+        // Popup Toast Logic
+        function showReviewToast() {
+            const container = document.getElementById('toast-container');
+            container.innerHTML = ''; // Xóa toast cũ
+            
+            const q = questions[currentIdx];
+            const isCorrect = userAnswers[currentIdx] === q.ans;
+            const isUnanswered = userAnswers[currentIdx] === null;
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${isCorrect ? 'success' : 'error'}`;
+            
+            let icon = isCorrect ? '✅' : '❌';
+            let text = isCorrect ? 'Chính xác! Bạn đã chọn đúng.' : 
+                       (isUnanswered ? 'Bạn chưa trả lời câu này.' : 'Sai rồi! Đáp án của bạn chưa chính xác.');
+
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <span class="toast-icon">${icon}</span>
+                    <span>${text}</span>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.style.animation='fadeOut 0.3s forwards'; setTimeout(() => this.parentElement.remove(), 300)">&times;</button>
+            `;
+            
+            container.appendChild(toast);
+
+            // Auto close sau 10s
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.animation = 'fadeOut 0.3s forwards';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 10000);
+        }
+
+    </script>
+</body>
+</html>
